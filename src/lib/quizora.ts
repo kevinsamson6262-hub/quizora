@@ -221,6 +221,96 @@ export const AVATARS = [
     name: "Avatar 36",
     image: "/avatars/custom/q36.png",
   },
+  {
+    id: "q37",
+    emoji: "👤",
+    name: "Avatar 37",
+    image: "/avatars/custom/q37.png",
+  },
+  {
+    id: "q38",
+    emoji: "👤",
+    name: "Avatar 38",
+    image: "/avatars/custom/q38.png",
+  },
+  {
+    id: "q39",
+    emoji: "👤",
+    name: "Avatar 39",
+    image: "/avatars/custom/q39.png",
+  },
+  {
+    id: "q40",
+    emoji: "👤",
+    name: "Avatar 40",
+    image: "/avatars/custom/q40.png",
+  },
+  {
+    id: "q41",
+    emoji: "👤",
+    name: "Avatar 41",
+    image: "/avatars/custom/q41.png",
+  },
+  {
+    id: "q42",
+    emoji: "👤",
+    name: "Avatar 42",
+    image: "/avatars/custom/q42.png",
+  },
+  {
+    id: "q43",
+    emoji: "👤",
+    name: "Avatar 43",
+    image: "/avatars/custom/q43.png",
+  },
+  {
+    id: "q44",
+    emoji: "👤",
+    name: "Avatar 44",
+    image: "/avatars/custom/q44.png",
+  },
+  {
+    id: "q45",
+    emoji: "👤",
+    name: "Avatar 45",
+    image: "/avatars/custom/q45.png",
+  },
+  {
+    id: "q46",
+    emoji: "👤",
+    name: "Avatar 46",
+    image: "/avatars/custom/q46.png",
+  },
+  {
+    id: "q47",
+    emoji: "👤",
+    name: "Avatar 47",
+    image: "/avatars/custom/q47.png",
+  },
+  {
+    id: "q48",
+    emoji: "👤",
+    name: "Avatar 48",
+    image: "/avatars/custom/q48.png",
+  },
+  {
+    id: "q49",
+    emoji: "👤",
+    name: "Avatar 49",
+    image: "/avatars/custom/q49.png",
+  },
+  {
+    id: "q50",
+    emoji: "👤",
+    name: "Avatar 50",
+    image: "/avatars/custom/q50.png",
+  },
+  {
+    id: "q51",
+    emoji: "👤",
+    name: "Avatar 51",
+    image: "/avatars/custom/q51.png",
+  },
 ] as const;
 
 export type AvatarId = (typeof AVATARS)[number]["id"];
