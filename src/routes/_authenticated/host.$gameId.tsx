@@ -26,6 +26,7 @@ function Host() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [counts, setCounts] = useState<number[]>([0, 0, 0, 0]);
   const [answered, setAnswered] = useState(0);
+  const [answerCountQuestion, setAnswerCountQuestion] = useState(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [presentation, setPresentation] = useState(false);
   const [autoNext, setAutoNext] = useState(false);
@@ -70,8 +71,29 @@ const left =
 
   useEffect(() => {
     if (idx < 0) return;
-    const unsub = subscribeAnswerCounts(gameId, idx, (c, total) => { setCounts(c); setAnswered(total); });
-    return () => unsub();
+
+    // Reset the previous question's answer state immediately when the
+    // host moves to a new question. Firestore's new snapshot arrives
+    // asynchronously, so keeping the old count here can make the
+    // auto-reveal effect think that everyone has already answered.
+    setCounts([0, 0, 0, 0]);
+    setAnswered(0);
+    setAnswerCountQuestion(-1);
+
+    let active = true;
+    const questionIndex = idx;
+
+    const unsub = subscribeAnswerCounts(gameId, questionIndex, (c, total) => {
+      if (!active) return;
+      setCounts(c);
+      setAnswered(total);
+      setAnswerCountQuestion(questionIndex);
+    });
+
+    return () => {
+      active = false;
+      unsub();
+    };
   }, [gameId, idx]);
 
   async function setState(status: GameStatus, index: number) {
@@ -91,31 +113,36 @@ const left =
   }
 
   useEffect(() => {
-  if (
-    game?.status !== "question" ||
-    !q ||
-    left === null
-  ) {
-    return;
-  }
+    if (
+      game?.status !== "question" ||
+      !q ||
+      left === null
+    ) {
+      return;
+    }
 
-  const allPlayersAnswered =
-    players.length > 0 &&
-    answered >= players.length;
+    // Do not use the previous question's answer count while the new
+    // Firestore listener is attaching. The count is considered valid
+    // only after a snapshot for this exact question index arrives.
+    const allPlayersAnswered =
+      answerCountQuestion === idx &&
+      players.length > 0 &&
+      answered >= players.length;
 
-  const timerFinished = left <= 0;
+    const timerFinished = left <= 0;
 
-  if (timerFinished || allPlayersAnswered) {
-    void setState("reveal", idx);
-  }
-}, [
-  left,
-  answered,
-  players.length,
-  game?.status,
-  q,
-  idx,
-]);
+    if (timerFinished || allPlayersAnswered) {
+      void setState("reveal", idx);
+    }
+  }, [
+    left,
+    answerCountQuestion,
+    answered,
+    players.length,
+    game?.status,
+    q,
+    idx,
+  ]);
 
   useEffect(() => {
     if (game?.status !== "reveal" || !autoNext) return;
@@ -166,7 +193,7 @@ const left =
       </main>}
 
       {(game.status === "question" || game.status === "reveal") && q && <main className="flex flex-1 flex-col gap-5">
-        <div className="flex items-center justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><p className="text-sm uppercase tracking-[.25em] text-muted-foreground">Question {idx + 1}</p>{roundTheme && <HudPill>{roundTheme[2]} {roundTheme[1]}</HudPill>}<HudPill>{q.difficulty.toUpperCase()} · ×{DIFFICULTY_MULTIPLIER[q.difficulty]}</HudPill></div><h1 className={cn("mt-1 font-display text-4xl sm:text-6xl", presentation && "sm:text-7xl")}>{q.text}</h1></div>{game.status === "question" && <TimerRing left={left} total={q.time_limit} />}</div>
+        <div className="flex items-center justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><p className="text-sm uppercase tracking-[.25em] text-muted-foreground">Question {idx + 1}</p>{roundTheme && <HudPill>{roundTheme[2]} {roundTheme[1]}</HudPill>}<HudPill>{q.difficulty.toUpperCase()} · ×{DIFFICULTY_MULTIPLIER[q.difficulty]}</HudPill></div><h1 className={cn("mt-1 font-display text-4xl sm:text-6xl", presentation && "sm:text-7xl")}>{q.text}</h1></div>{game.status === "question" && <TimerRing left={left ?? q.time_limit} total={q.time_limit} />}</div>
         <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/10 px-5 py-3"><div className="text-sm text-muted-foreground">{showAnswerCount ? <>ANSWERS <b className="font-display text-2xl text-foreground">{answered}/{players.length}</b></> : "Answer counter hidden"}</div><div className="flex gap-2">{game.status === "question" ? <Button variant="glass" onClick={() => void setState("reveal", idx)}><SkipForward /> Reveal now</Button> : <Button variant="arena" onClick={() => void setState("leaderboard", idx)}><ChevronRight /> Continue</Button>}</div></div>
         <div className="grid flex-1 gap-4 sm:grid-cols-2">{q.options.map((o, i) => <AnswerTile key={i} index={i} text={o} big disabled count={game.status === "reveal" ? counts[i] : undefined} state={game.status === "reveal" ? (i === q.correct_index ? "correct" : "wrong") : "idle"} />)}</div>
         {game.status === "reveal" && <div className="relative overflow-hidden text-center font-display text-2xl text-success"><GameBurst type={correctCount > 0 ? "correct" : "wrong"} />{q.options[q.correct_index]} is correct! <span className="text-foreground">{correctCount} got it</span> · <span className="text-accent">{defeatedCount} missed it 🤣</span>{autoNext && <span className="ml-2 text-muted-foreground">Next screen incoming…</span>}</div>}

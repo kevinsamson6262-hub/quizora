@@ -184,34 +184,63 @@ function Play() {
 
   /**
    * Load the current question.
+   *
+   * Keep this effect tied only to the game/question identity. The live
+   * game object changes frequently, and using the whole object as a
+   * dependency can restart the async request while a round is changing.
+   * Cancelling stale requests also prevents an older question from
+   * overwriting the current one.
    */
   useEffect(() => {
     if (!game || idx < 0) return;
 
+    let cancelled = false;
+
+    // Clear the previous question immediately. This prevents old answer
+    // buttons from being displayed during a question transition.
+    setQ(null);
+
     getPlayerQuestion(gameId, idx)
-      .then(setQ)
-      .catch(() => setQ(null));
+      .then((question) => {
+        if (!cancelled) {
+          setQ(question);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setQ(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gameId, idx]);
+
+  /**
+   * Reset/load this player's answer independently from question loading.
+   */
+  useEffect(() => {
+    if (!session || idx < 0) return;
 
     if (status === "question") {
       setPicked(null);
       setMine(null);
+      return;
     }
 
-    if (session && status !== "question") {
-      getMyAnswer(
-        gameId,
-        session.player_id,
-        idx,
-      )
-        .then(setMine)
-        .catch(() => setMine(null));
-    }
+    getMyAnswer(
+      gameId,
+      session.player_id,
+      idx,
+    )
+      .then(setMine)
+      .catch(() => setMine(null));
   }, [
-    status,
-    idx,
     gameId,
+    idx,
+    status,
     session,
-    game,
   ]);
 
   /**
