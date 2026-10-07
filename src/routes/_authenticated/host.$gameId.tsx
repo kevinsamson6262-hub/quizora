@@ -50,7 +50,23 @@ function Host() {
 
   const idx = game?.current_index ?? -1;
   const q = idx >= 0 ? questions[idx] : undefined;
-  const left = q && game ? secondsLeft(game.question_started_at, q.time_limit, now) : 0;
+  const validTimeLimit =
+  q &&
+  Number.isFinite(Number(q.time_limit)) &&
+  Number(q.time_limit) > 0
+    ? Number(q.time_limit)
+    : null;
+
+const left =
+  game?.status === "question" &&
+  game?.question_started_at &&
+  validTimeLimit !== null
+    ? secondsLeft(
+        game.question_started_at,
+        validTimeLimit,
+        now,
+      )
+    : null;
 
   useEffect(() => {
     if (idx < 0) return;
@@ -75,9 +91,31 @@ function Host() {
   }
 
   useEffect(() => {
-    if (game?.status !== "question" || !q) return;
-    if (left === 0 || (players.length > 0 && answered >= players.length)) void setState("reveal", idx);
-  }, [left, answered, players.length, game?.status, q, idx]);
+  if (
+    game?.status !== "question" ||
+    !q ||
+    left === null
+  ) {
+    return;
+  }
+
+  const allPlayersAnswered =
+    players.length > 0 &&
+    answered >= players.length;
+
+  const timerFinished = left <= 0;
+
+  if (timerFinished || allPlayersAnswered) {
+    void setState("reveal", idx);
+  }
+}, [
+  left,
+  answered,
+  players.length,
+  game?.status,
+  q,
+  idx,
+]);
 
   useEffect(() => {
     if (game?.status !== "reveal" || !autoNext) return;

@@ -218,20 +218,106 @@ export async function joinGame(pin: string, nickname: string, avatar: string): P
   return { game_id: snap.docs[0].id, player_id: user.uid, token: user.uid };
 }
 
-export async function getPlayerQuestion(gameId: string, index: number): Promise<PlayerQuestion | null> {
+export async function getPlayerQuestion(
+  gameId: string,
+  index: number,
+): Promise<PlayerQuestion | null> {
   const game = await getGame(gameId);
-  if (!game) return null;
-  const snap = await getDoc(doc(firebaseDb, "games", gameId, "questions", String(index)));
-  if (!snap.exists()) return null;
-  const data = snap.data();
-  let correct_index: number | null = null;
-  if (game.status !== "question") {
-    const qSnap = await getDoc(doc(firebaseDb, "quizzes", game.quiz_id, "questions", String(index)));
-    if (qSnap.exists()) correct_index = Number(qSnap.data().correct_index);
+
+  if (!game) {
+    return null;
   }
-  const difficulty = (data.difficulty ?? "medium") as QuestionDifficulty;
-  const theme_id = questionTheme(index, data.theme_id)[0];
-  return { index, options: data.options, time_limit: data.time_limit, correct_index, difficulty, theme_id };
+
+  const gameQuestionRef = doc(
+    firebaseDb,
+    "games",
+    gameId,
+    "questions",
+    String(index),
+  );
+
+  const snap = await getDoc(gameQuestionRef);
+
+  if (!snap.exists()) {
+    return null;
+  }
+
+  const data = snap.data();
+
+  const options = Array.isArray(data.options)
+    ? data.options.map(String)
+    : [];
+
+  if (options.length !== 4) {
+    throw new Error(
+      `Question ${index + 1} must have exactly 4 options.`,
+    );
+  }
+
+  const timeLimit = Number(data.time_limit);
+
+  const difficulty =
+    (data.difficulty ?? "medium") as QuestionDifficulty;
+
+  const theme_id = questionTheme(
+    index,
+    data.theme_id,
+  )[0];
+
+  /*
+   * The correct answer is intentionally hidden
+   * while the question is active.
+   */
+  let correct_index: number | null = null;
+
+  /*
+   * During reveal/leaderboard we can safely expose
+   * the correct answer.
+   *
+   * IMPORTANT:
+   * Search the quiz questions by `position`
+   * instead of assuming the Firestore document ID
+   * is "0", "1", "2", etc.
+   */
+  if (
+    game.status === "reveal" ||
+    game.status === "leaderboard" ||
+    game.status === "finished"
+  ) {
+    const quizQuestions = await getDocs(
+      query(
+        collection(
+          firebaseDb,
+          "quizzes",
+          game.quiz_id,
+          "questions",
+        ),
+        where("position", "==", index),
+        limit(1),
+      ),
+    );
+
+    if (!quizQuestions.empty) {
+      const originalQuestion =
+        quizQuestions.docs[0].data();
+
+      correct_index = Number(
+        originalQuestion.correct_index,
+      );
+    }
+  }
+
+  return {
+    index,
+    options,
+    time_limit:
+      Number.isFinite(timeLimit) && timeLimit > 0
+        ? timeLimit
+        : 20,
+    correct_index,
+    difficulty,
+    theme_id,
+  };
 }
 
 export async function getMyAnswer(gameId: string, playerId: string, index: number): Promise<{ choice: number; correct: boolean; points: number } | null> {
