@@ -6,8 +6,20 @@ import { AVATARS } from "@/lib/quizora";
 
 export function Logo({ className }: { className?: string }) {
   return (
-    <Link to="/" className={cn("font-display text-2xl tracking-wide", className)}>
-      <span className="text-gradient-title">QUIZORA</span>
+    <Link
+      to="/"
+      className={cn(
+        "flex flex-col font-display tracking-wide",
+        className
+      )}
+    >
+      <span className="text-gradient-title text-2xl">
+        QUIZORA
+      </span>
+
+      <span className="text-[10px] font-medium tracking-wider text-muted-foreground">
+        by Kevin Samson, Karthikeyan, Mari Sankar.
+      </span>
     </Link>
   );
 }
