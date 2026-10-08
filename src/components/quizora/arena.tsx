@@ -9,16 +9,12 @@ export function Logo({ className }: { className?: string }) {
     <Link
       to="/"
       className={cn(
-        "flex flex-col font-display tracking-wide",
+        "font-display text-2xl tracking-wide",
         className
       )}
     >
-      <span className="text-gradient-title text-2xl">
+      <span className="text-gradient-title">
         QUIZORA
-      </span>
-
-      <span className="text-[10px] font-medium tracking-wider text-muted-foreground">
-        by Kevin Samson, Karthikeyan, Mari Sankar.
       </span>
     </Link>
   );
