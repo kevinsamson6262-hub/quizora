@@ -42,7 +42,7 @@ function Home() {
           <div className="relative z-10 grid w-full items-center gap-7 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
             <section className="home-copy order-2 text-center lg:order-1 lg:text-left">
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.06] px-4 py-2 text-xs font-bold uppercase tracking-[.22em] text-muted-foreground backdrop-blur-xl">
-                <span className="size-2 animate-pulse rounded-full bg-success" /> Live multiplayer quiz arena
+                <span className="size-2 animate-pulse rounded-full bg-success" /> Developed by Kevin Samson, Karthikeyan, Mari Sankar.
               </div>
               <motion.h1
                 initial={{ y: 24, opacity: 0 }}
